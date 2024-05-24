@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalender</title>
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #ffffff;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      margin-top: 50px;
+      max-width: 900px; /* Breite des Kalenders */
+      margin-left: 50px;
+      margin-right: auto;
+    }
+    .calendar-header, .calendar-body {
+      margin: 20px 0;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap; /* Für bessere Responsivität */
+      gap: 10px;
+      justify-content: flex-start;
+      align-items: center;
+    }
+    .controls .form-control {
+      flex: 0 1 auto;
+      width: auto;
+    }
+    .controls .btn {
+      width: 100px; /* Einheitsbreite für alle Buttons */
+      background-color: #007bff; /* Blau für alle Buttons */
+      border-color: #007bff; /* Blau für alle Buttons */
+      color: white; /* Weiße Schrift */
+      text-align: center;
+    }
+    .day-cell {
+      height: 150px;
+      min-width: 200px;
+      position: relative;
+      padding: 10px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      transition: background-color 0.3s, box-shadow 0.3s, border-color 0.3s;
+      box-sizing: border-box;
+    }
+    .day-cell:hover {
+      background-color: #f1f1f1;
+    }
+    .today-highlight {
+      box-shadow: 2px 2px 15px rgba(0, 123, 255, 0.3); /* Schatten-Effekt in Blau mit Blur */
+    }
+    .day-label {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 1rem;
+    }
+    .holiday-label {
+      position: absolute;
+      top: 10px;
+      left: 60px;
+      font-size: 0.9rem;
+      color: grey;
+    }
+    .note-input {
+      width: calc(100% - 20px);
+      height: calc(100% - 40px);
+      border: none;
+      padding: 8px;
+      box-sizing: border-box;
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background-color: #fefefe;
+      resize: none;
+    }
+    .note-input:focus {
+      outline: none;
+    }
+    .week-number {
+      background-color: #f0f0f0; /* Gleicher Farbcode wie leere Zellen */
+      color: #495057;
+      text-align: center;
+      font-weight: normal;
+      vertical-align: middle;
+      display: table-cell;
+      border-radius: 4px;
+    }
+    .thead-dark th {
+      background-color: #8E8E8E !important;
+      color: #ffffff !important;
+      font-weight: normal; /* Kein Bold */
+      border: none; /* Kein Rahmen */
+      border-radius: 4px; /* Gleicher Radius wie die Tageszellen */
+    }
+    th, td {
+      vertical-align: top;
+    }
+    table {
+      border-collapse: separate;
+      border-spacing: 8px;
+      width: 100%;
+    }
+    th {
+      width: calc(100% / 8);
+    }
+    @media (max-width: 768px) {
+      .day-cell {
+        min-width: 150px;
+      }
+      .controls {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .controls .form-control, .controls .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container centered">
+  <div class="calendar-header">
+    <div class="controls">
+      <select class="form-control" id="month-select" style="min-width: auto; width: auto;">
+        <option value="0">Januar</option>
+        <option value="1">Februar</option>
+        <option value="2">März</option>
+        <option value="3">April</option>
+        <option value="4">Mai</option>
+        <option value="5">Juni</option>
+        <option value="6">Juli</option>
+        <option value="7">August</option>
+        <option value="8">September</option>
+        <option value="9">Oktober</option>
+        <option value="10">November</option>
+        <option value="11">Dezember</option>
+      </select>
+      <button class="btn btn-secondary" id="prev-month">Zurück</button>
+      <button class="btn btn-secondary" id="current-month">Heute</button>
+      <button class="btn btn-secondary" id="next-month">Vor</button>
+      <select class="form-control" id="state-select" style="min-width: auto; width: auto;">
+        <option value="BW">Baden-Württemberg</option>
+        <option value="BY">Bayern</option>
+        <option value="BE">Berlin</option>
+        <option value="BB">Brandenburg</option>
+        <option value="HB">Bremen</option>
+        <option value="HH">Hamburg</option>
+        <option value="HE">Hessen</option>
+        <option value="MV">Mecklenburg-Vorpommern</option>
+        <option value="NI">Niedersachsen</option>
+        <option value="NW">Nordrhein-Westfalen</option>
+        <option value="RP">Rheinland-Pfalz</option>
+        <option value="SL">Saarland</option>
+        <option value="SN">Sachsen</option>
+        <option value="ST">Sachsen-Anhalt</option>
+        <option value="SH">Schleswig-Holstein</option>
+        <option value="TH">Thüringen</option>
+      </select>
+      <button class="btn btn-primary" id="save-button" onclick="saveCalendar()">Speichern</button>
+    </div>
+  </div>
+  <table class="table">
+    <thead class="thead-dark">
+      <tr>
+        <th scope="col">KW</th>
+        <th scope="col">Montag</th>
+        <th scope="col">Dienstag</th>
+        <th scope="col">Mittwoch</th>
+        <th scope="col">Donnerstag</th>
+        <th scope="col">Freitag</th>
+        <th scope="col">Samstag</th>
+        <th scope="col">Sonntag</th>
+      </tr>
+    </thead>
+    <tbody id="calendar-body">
+      <!-- Dynamisch generierte Kalender-Tage -->
+    </tbody>
+  </table>
+</div>
+<script>
+  // Feiertage für verschiedene Bundesländer
+  const holidays = {
+    "BW": {
+      0: {1: "Neujahr"},
+      0: {6: "Heilige Drei Könige"},
+      3: {7: "Karfreitag"},
+      3: {9: "Ostersonntag"},
+      3: {10: "Ostermontag"},
+      4: {1: "Tag der Arbeit"},
+      4: {18: "Christi Himmelfahrt"},
+      4: {28: "Pfingstsonntag"},
+      4: {29: "Pfingstmontag"},
+      9: {3: "Tag der Deutschen Einheit", 31: "Reformationstag"},
+      11: {1: "Allerheiligen"},
+      11: {25: "Weihnachten"},
+      11: {26: "Zweiter Weihnachtsfeiertag"}
+    },
+    "BY": {
+      0: {1: "Neujahr"},
+      0: {6: "Heilige Drei Könige"},
+      3: {7: "Karfreitag"},
+      3: {9: "Ostersonntag"},
+      3: {10: "Ostermontag"},
+      4: {1: "Tag der Arbeit"},
+      4: {18: "Christi Himmelfahrt"},
+      4: {28: "Pfingstsonntag"},
+      4: {29: "Pfingstmontag"},
+      9: {3: "Tag der Deutschen Einheit"},
+      10: {22: "Buß- und Bettag"},
+      11: {1: "Allerheiligen"},
+      11: {25: "Weihnachten"},
+      11: {26: "Zweiter Weihnachtsfeiertag"}
+    },
+    // Weitere Bundesländer hier hinzufügen...
+  };
+  function getWeekNumber(d) {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return weekNo;
+  }
+  const calendarBody = document.getElementById('calendar-body');
+  const monthSelect = document.getElementById('month-select');
+  const stateSelect = document.getElementById('state-select');
+  const prevMonthBtn = document.getElementById('prev-month');
+  const currentMonthBtn = document.getElementById('current-month');
+  const nextMonthBtn = document.getElementById('next-month');
+  function generateCalendar(month, state) {
+    calendarBody.innerHTML = '';
+    const firstDay = (new Date(new Date().getFullYear(), month, 1).getDay() + 6) % 7; // Anpassung für Montag als ersten Tag
+    const daysInMonth = new Date(new Date().getFullYear(), month + 1, 0).getDate();
+    const today = new Date();
+    let date = 1;
+    const stateHolidays = holidays[state] && holidays[state][month] ? holidays[state][month] : {};
+    for (let i = 0; i < 6; i++) { // 6 rows
+      const row = document.createElement('tr');
+      const weekCell = document.createElement('td');
+      weekCell.classList.add('week-number');
+      if (date <= daysInMonth) {
+        const currentDate = new Date(new Date().getFullYear(), month, date);
+        weekCell.textContent = getWeekNumber(currentDate);
+      }
+      row.appendChild(weekCell);
+      for (let j = 0; j < 7; j++) { // 7 columns
+        const cell = document.createElement('td');
+        cell.classList.add('day-cell');
+        if (i === 0 && j < firstDay) {
+          cell.classList.add('bg-light');
+        } else if (date <= daysInMonth) {
+          const dayLabel = document.createElement('div');
+          dayLabel.classList.add('day-label');
+          dayLabel.textContent = `${date}`;
+          
+          const holidayLabel = document.createElement('div');
+          holidayLabel.classList.add('holiday-label');
+          if (stateHolidays[date]) {
+            holidayLabel.textContent = stateHolidays[date];
+          }
+          const noteInput = document.createElement('textarea');
+          noteInput.classList.add('note-input');
+          noteInput.value = getNoteValue(month, date);
+          noteInput.dataset.date = date;
+          if (today.getDate() === date && today.getMonth() === month && today.getFullYear() === new Date().getFullYear()) {
+            cell.classList.add('today-highlight');
+          }
+          cell.appendChild(dayLabel);
+          if (holidayLabel.textContent) {
+            cell.appendChild(holidayLabel);
+          }
+          cell.appendChild(noteInput);
+          date++;
+        } else {
+          cell.classList.add('bg-light');
+        }
+        row.appendChild(cell);
+      }
+      calendarBody.appendChild(row);
+    }
+  }
+  function getNoteValue(month, date) {
+    const storedNotes = JSON.parse(localStorage.getItem('calendar-notes')) || {};
+    const monthNotes = storedNotes[month] || {};
+    return monthNotes[date] || '';
+  }
+  function saveCalendar() {
+    const storedNotes = JSON.parse(localStorage.getItem('calendar-notes')) || {};
+    const month = monthSelect.value;
+    if (!storedNotes[month]) {
+      storedNotes[month] = {};
+    }
+    const inputs = document.querySelectorAll('.note-input');
+    inputs.forEach(input => {
+      const date = input.dataset.date;
+      storedNotes[month][date] = input.value;
+    });
+    localStorage.setItem('calendar-notes', JSON.stringify(storedNotes));
+    alert('Kalender gespeichert!');
+  }
+  monthSelect.addEventListener('change', function() {
+    generateCalendar(parseInt(this.value), stateSelect.value);
+  });
+  stateSelect.addEventListener('change', function() {
+    generateCalendar(parseInt(monthSelect.value), this.value);
+  });
+  prevMonthBtn.addEventListener('click', function() {
+    let currentMonth = parseInt(monthSelect.value);
+    currentMonth = currentMonth > 0 ? currentMonth - 1 : 11;
+    monthSelect.value = currentMonth;
+    generateCalendar(currentMonth, stateSelect.value);
+  });
+  currentMonthBtn.addEventListener('click', function() {
+    const currentMonth = new Date().getMonth();
+    monthSelect.value = currentMonth;
+    generateCalendar(currentMonth, stateSelect.value);
+  });
+  nextMonthBtn.addEventListener('click', function() {
+    let currentMonth = parseInt(monthSelect.value);
+    currentMonth = currentMonth < 11 ? currentMonth + 1 : 0;
+    monthSelect.value = currentMonth;
+    generateCalendar(currentMonth, stateSelect.value);
+  });
+  // Initiales Laden des aktuellen Monats und des ersten Bundeslands in der Liste
+  window.onload = function() {
+    const currentMonth = new Date().getMonth();
+    monthSelect.value = currentMonth;
+    generateCalendar(currentMonth, stateSelect.value);
+  }
+</script>
+</body>
+</html>
